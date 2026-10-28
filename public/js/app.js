@@ -17,7 +17,9 @@ const state = {
   audit: [],
   catalogs: { vendedores: [], seguridad: [] },
   currentCatalog: "vendedores",
-  selectedMovement: null
+  selectedMovement: null,
+  importRows: [],
+  importFileName: ""
 };
 
 const MOVEMENT_LABELS = {
@@ -45,6 +47,7 @@ const AUDIT_LABELS = {
   anular_movimiento: "Movimiento anulado",
   crear_producto: "Producto creado",
   modificar_producto: "Producto modificado",
+  importar_productos: "Productos importados desde XLSX",
   crear_usuario: "Usuario creado",
   modificar_usuario: "Usuario modificado",
   resetear_clave: "Contraseña restablecida",
@@ -137,6 +140,7 @@ function profileLabel(profile) {
 }
 
 function closeDialog(dialog) {
+  if (dialog?.id === "barcodeScannerDialog") stopBarcodeScanner();
   if (dialog?.open) dialog.close();
 }
 
@@ -222,7 +226,7 @@ async function searchProducts(term = "") {
   container.className = "product-grid empty-state";
   container.textContent = "Buscando productos...";
   try {
-    const data = await api(`productos?q=${encodeURIComponent(term)}&limit=150`);
+    const data = await api(`productos?q=${encodeURIComponent(term)}&limit=2000`);
     let products = data.productos || [];
     if ($("#onlyAvailable").checked) products = products.filter(product => Number(product.stockSensibleDisponible || 0) > 0);
     renderProductSearch(products);
@@ -337,7 +341,7 @@ async function cancelMovement(id) {
 async function loadAdminProducts() {
   if (state.profile?.perfil !== "administrador") return;
   try {
-    const data = await api("productos?limit=200");
+    const data = await api("productos?limit=2000");
     state.products = data.productos || [];
     renderAdminProducts();
   } catch (error) {
@@ -367,11 +371,9 @@ function openProductForm(product = null) {
   $("#productOriginalEan").value = product?.ean || "";
   $("#productEan").value = product?.ean || "";
   $("#productEan").disabled = Boolean(product);
+  $("#scanProductEan").hidden = Boolean(product);
   $("#productDescription").value = product?.descripcion || "";
   $("#productType").value = product?.tipo || "otro";
-  $("#productBrand").value = product?.marca || "";
-  $("#productCategory").value = product?.categoria || "";
-  $("#productActive").checked = product?.activo !== false;
   $("#productDialogTitle").textContent = product ? "Editar producto" : "Nuevo producto";
   openDialog($("#productDialog"));
 }
@@ -380,13 +382,12 @@ async function saveProduct(event) {
   event.preventDefault();
   const button = event.submitter;
   const editing = Boolean($("#productOriginalEan").value);
+  const current = editing ? state.products.find(item => item.ean === $("#productOriginalEan").value) : null;
   const body = {
     ean: $("#productOriginalEan").value || $("#productEan").value,
     descripcion: $("#productDescription").value,
     tipo: $("#productType").value,
-    marca: $("#productBrand").value,
-    categoria: $("#productCategory").value,
-    activo: $("#productActive").checked
+    activo: current?.activo !== false
   };
   try {
     setBusy(button, true);
@@ -397,6 +398,225 @@ async function saveProduct(event) {
   } catch (error) {
     showToast(error.message, "error");
   } finally { setBusy(button, false); }
+}
+
+let scannerControls = null;
+let scannerReader = null;
+
+function stopBarcodeScanner() {
+  try { scannerControls?.stop(); } catch { /* La cámara ya estaba detenida. */ }
+  scannerControls = null;
+  scannerReader = null;
+  const video = $("#barcodeVideo");
+  if (video) video.srcObject = null;
+}
+
+async function openBarcodeScanner(onDetected) {
+  if (!window.ZXingBrowser?.BrowserMultiFormatOneDReader) {
+    showToast("El lector de cámara no pudo iniciarse. Ingresá el EAN manualmente.", "error");
+    return;
+  }
+  if (!navigator.mediaDevices?.getUserMedia) {
+    showToast("Este dispositivo no permite utilizar la cámara desde el navegador.", "error");
+    return;
+  }
+
+  stopBarcodeScanner();
+  $("#scannerStatus").textContent = "Permití el acceso a la cámara y apuntá al código de barras.";
+  openDialog($("#barcodeScannerDialog"));
+
+  try {
+    scannerReader = new window.ZXingBrowser.BrowserMultiFormatOneDReader();
+    scannerControls = await scannerReader.decodeFromConstraints(
+      { video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+      $("#barcodeVideo"),
+      async (result, error, controls) => {
+        if (!result) return;
+        const ean = String(result.getText?.() || result.text || "").replace(/\D/g, "");
+        if (ean.length < 6 || ean.length > 14) {
+          $("#scannerStatus").textContent = "El código detectado no corresponde a un EAN válido.";
+          return;
+        }
+        try { controls.stop(); } catch { /* Ya detenido. */ }
+        scannerControls = null;
+        closeDialog($("#barcodeScannerDialog"));
+        if (navigator.vibrate) navigator.vibrate(100);
+        await onDetected(ean);
+      }
+    );
+  } catch (error) {
+    stopBarcodeScanner();
+    closeDialog($("#barcodeScannerDialog"));
+    const denied = error?.name === "NotAllowedError" || /permission|denied|permiso/i.test(error?.message || "");
+    showToast(denied ? "No se otorgó permiso para utilizar la cámara." : "No fue posible iniciar la cámara. Ingresá el EAN manualmente.", "error");
+  }
+}
+
+async function scanProductEan() {
+  await openBarcodeScanner(async ean => {
+    $("#productEan").value = ean;
+    try {
+      const data = await api(`productos?ean=${encodeURIComponent(ean)}`);
+      if (data.producto) {
+        openProductForm(data.producto);
+        showToast("El EAN ya existe. Se abrió el producto registrado.");
+        return;
+      }
+      $("#productDescription").focus();
+      showToast("EAN leído. Completá la descripción y el tipo.");
+    } catch (error) {
+      showToast(error.message, "error");
+    }
+  });
+}
+
+function normalizeHeader(value) {
+  return String(value ?? "")
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
+}
+
+function rawExcelValue(cell) {
+  let value = cell?.value;
+  if (value && typeof value === "object") {
+    if (Object.prototype.hasOwnProperty.call(value, "result")) value = value.result;
+    else if (Array.isArray(value.richText)) value = value.richText.map(part => part.text || "").join("");
+    else if (Object.prototype.hasOwnProperty.call(value, "text")) value = value.text;
+  }
+  return value ?? cell?.text ?? "";
+}
+
+function normalizeImportedEan(value) {
+  if (typeof value === "number") {
+    if (!Number.isSafeInteger(value)) throw new Error("el EAN numérico no es un entero válido");
+    value = String(value);
+  }
+  let text = String(value ?? "").trim();
+  if (/^\d+(?:[.,]0+)?[eE][+]?[0-9]+$/.test(text) || /^\d+[eE][+]?[0-9]+$/.test(text)) {
+    const numeric = Number(text.replace(",", "."));
+    if (!Number.isSafeInteger(numeric)) throw new Error("el EAN en notación científica no puede convertirse con seguridad");
+    text = String(numeric);
+  }
+  if (!/^\d{6,14}$/.test(text)) throw new Error("el EAN debe contener entre 6 y 14 dígitos");
+  return text;
+}
+
+function resetImportDialog() {
+  state.importRows = [];
+  state.importFileName = "";
+  $("#importProductsForm").reset();
+  $("#importSummary").hidden = true;
+  $("#importErrors").hidden = true;
+  $("#importPreview").hidden = true;
+  $("#confirmProductImport").disabled = true;
+}
+
+function renderImportPreview(rows, errors) {
+  const summary = $("#importSummary");
+  summary.hidden = false;
+  summary.innerHTML = `
+    <div class="import-stat"><span>Filas leídas</span><strong>${formatNumber(rows.length + errors.length)}</strong></div>
+    <div class="import-stat"><span>Productos válidos</span><strong>${formatNumber(rows.length)}</strong></div>
+    <div class="import-stat"><span>Errores</span><strong>${formatNumber(errors.length)}</strong></div>
+    <div class="import-stat"><span>Estado inicial</span><strong>Activo</strong></div>`;
+
+  const errorBox = $("#importErrors");
+  errorBox.hidden = !errors.length;
+  errorBox.innerHTML = errors.length
+    ? `<strong>Corregí el archivo antes de importar:</strong><ul>${errors.slice(0, 60).map(error => `<li>${escapeHtml(error)}</li>`).join("")}</ul>${errors.length > 60 ? `<p>Y ${errors.length - 60} error(es) más.</p>` : ""}`
+    : "";
+
+  const preview = $("#importPreview");
+  preview.hidden = !rows.length;
+  preview.innerHTML = rows.length ? `
+    <table class="preview-table"><thead><tr><th>EAN</th><th>Descripción</th><th>Tipo</th></tr></thead>
+    <tbody>${rows.slice(0, 100).map(row => `<tr><td>${escapeHtml(row.ean)}</td><td>${escapeHtml(row.descripcion)}</td><td>${escapeHtml(row.tipo)}</td></tr>`).join("")}</tbody></table>
+    ${rows.length > 100 ? `<p class="helper" style="padding:0 10px">Se muestran las primeras 100 filas de ${formatNumber(rows.length)}.</p>` : ""}` : "";
+
+  $("#confirmProductImport").disabled = !rows.length || Boolean(errors.length);
+}
+
+async function readProductWorkbook(file) {
+  if (!file?.name?.toLowerCase().endsWith(".xlsx")) throw new Error("Seleccioná un archivo con extensión .xlsx.");
+  if (!window.ExcelJS?.Workbook) throw new Error("El lector de Excel no está disponible.");
+
+  const workbook = new window.ExcelJS.Workbook();
+  await workbook.xlsx.load(await file.arrayBuffer());
+  const sheet = workbook.worksheets[0];
+  if (!sheet) throw new Error("El archivo no contiene ninguna hoja.");
+
+  const headerMap = new Map();
+  sheet.getRow(1).eachCell((cell, columnNumber) => headerMap.set(normalizeHeader(rawExcelValue(cell)), columnNumber));
+  const required = ["EAN", "DESCRIPCION", "TIPO"];
+  const missing = required.filter(header => !headerMap.has(header));
+  if (missing.length) throw new Error(`Faltan las columnas: ${missing.join(", ")}.`);
+
+  const rows = [];
+  const errors = [];
+  const seen = new Set();
+
+  for (let rowNumber = 2; rowNumber <= sheet.actualRowCount; rowNumber += 1) {
+    const row = sheet.getRow(rowNumber);
+    const rawEan = rawExcelValue(row.getCell(headerMap.get("EAN")));
+    const rawDescription = rawExcelValue(row.getCell(headerMap.get("DESCRIPCION")));
+    const rawType = rawExcelValue(row.getCell(headerMap.get("TIPO")));
+    if (![rawEan, rawDescription, rawType].some(value => String(value ?? "").trim())) continue;
+
+    try {
+      const ean = normalizeImportedEan(rawEan);
+      const descripcion = String(rawDescription ?? "").trim().slice(0, 160);
+      const tipo = normalizeHeader(rawType).toLowerCase();
+      if (!descripcion) throw new Error("la descripción es obligatoria");
+      if (!["celular", "tablet", "consola", "otro"].includes(tipo)) throw new Error("el tipo debe ser celular, tablet, consola u otro");
+      if (seen.has(ean)) throw new Error(`el EAN ${ean} está repetido en el archivo`);
+      seen.add(ean);
+      rows.push({ fila: rowNumber, ean, descripcion, tipo });
+    } catch (error) {
+      errors.push(`Fila ${rowNumber}: ${error.message}.`);
+    }
+  }
+
+  if (rows.length + errors.length > 2000) errors.unshift("El archivo supera el máximo de 2000 productos por importación.");
+  return { rows, errors };
+}
+
+async function handleProductImportFile(event) {
+  const file = event.target.files?.[0];
+  state.importRows = [];
+  state.importFileName = file?.name || "";
+  $("#confirmProductImport").disabled = true;
+  if (!file) return;
+
+  try {
+    const { rows, errors } = await readProductWorkbook(file);
+    state.importRows = rows;
+    renderImportPreview(rows, errors);
+  } catch (error) {
+    renderImportPreview([], [error.message]);
+  }
+}
+
+async function importProducts(event) {
+  event.preventDefault();
+  if (!state.importRows.length) return showToast("Seleccioná y validá un archivo XLSX.", "error");
+  const button = event.submitter;
+  try {
+    setBusy(button, true, "Importando...");
+    const result = await api("importar-productos", {
+      method: "POST",
+      body: JSON.stringify({ archivo: state.importFileName, productos: state.importRows })
+    });
+    closeDialog($("#importProductsDialog"));
+    showToast(result.mensaje || "Productos importados correctamente.");
+    resetImportDialog();
+    await loadAdminProducts();
+  } catch (error) {
+    showToast(error.message, "error");
+  } finally {
+    setBusy(button, false);
+  }
 }
 
 async function loadUsers() {
@@ -587,6 +807,10 @@ function addMovementItem() {
   const item = $("#movementItems .movement-item:last-child");
   item.querySelector('[data-item="tipo"]').addEventListener("change", () => updateItemType(item));
   item.querySelector("[data-lookup-ean]").addEventListener("click", () => lookupMovementEan(item));
+  item.querySelector("[data-scan-ean]").addEventListener("click", () => openBarcodeScanner(async ean => {
+    item.querySelector('[data-item="ean"]').value = ean;
+    await lookupMovementEan(item);
+  }));
   item.querySelector("[data-remove-item]").addEventListener("click", () => {
     item.remove();
     if (!$("#movementItems").children.length) addMovementItem();
@@ -776,7 +1000,14 @@ function bindEvents() {
   $("#movementForm").addEventListener("submit", saveMovement);
 
   $("#newProductButton").addEventListener("click", () => openProductForm());
+  $("#scanProductEan").addEventListener("click", scanProductEan);
   $("#productForm").addEventListener("submit", saveProduct);
+  $("#importProductsButton").addEventListener("click", () => { resetImportDialog(); openDialog($("#importProductsDialog")); });
+  $("#productImportFile").addEventListener("change", handleProductImportFile);
+  $("#importProductsForm").addEventListener("submit", importProducts);
+  $("#closeBarcodeScanner").addEventListener("click", () => closeDialog($("#barcodeScannerDialog")));
+  $("#cancelBarcodeScanner").addEventListener("click", () => closeDialog($("#barcodeScannerDialog")));
+  $("#barcodeScannerDialog").addEventListener("close", stopBarcodeScanner);
   $("#adminProductSearch").addEventListener("input", renderAdminProducts);
   $("#adminProductList").addEventListener("click", event => {
     const button = event.target.closest("[data-edit-product]");

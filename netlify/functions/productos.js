@@ -32,8 +32,6 @@ function productPayload(body) {
     descripcion,
     descripcionBusqueda: descripcion.toLowerCase(),
     tipo,
-    marca: cleanText(body.marca, 80),
-    categoria: cleanText(body.categoria, 80),
     activo: body.activo !== false
   };
 }
@@ -54,14 +52,13 @@ export async function handler(event) {
       }
 
       const term = cleanText(event.queryStringParameters?.q, 100).toLowerCase();
-      const limit = Math.min(Number(event.queryStringParameters?.limit) || 100, 200);
+      const limit = Math.min(Number(event.queryStringParameters?.limit) || 200, 2000);
       const snap = await db.collection("productos").orderBy("descripcionBusqueda").limit(limit).get();
       let products = snap.docs.map(serialize);
       if (term) {
         products = products.filter(item =>
           item.ean.includes(term.replace(/\D/g, "")) ||
-          item.descripcionBusqueda.includes(term) ||
-          String(item.marca || "").toLowerCase().includes(term)
+          item.descripcionBusqueda.includes(term)
         );
       }
       return response(200, { ok: true, productos: products }, origin);
@@ -104,8 +101,6 @@ export async function handler(event) {
         descripcion: payload.descripcion,
         descripcionBusqueda: payload.descripcionBusqueda,
         tipo: payload.tipo,
-        marca: payload.marca,
-        categoria: payload.categoria,
         activo: payload.activo,
         actualizadoEn: FieldValue.serverTimestamp(),
         actualizadoPor: profile.uid

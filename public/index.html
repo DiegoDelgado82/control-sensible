@@ -94,7 +94,7 @@
           <div><p class="eyebrow">CONSULTA EN LÍNEA</p><h2>Productos aptos</h2></div>
         </div>
         <form id="searchForm" class="search-bar">
-          <input id="searchInput" type="search" placeholder="EAN, descripción o marca" autocomplete="off">
+          <input id="searchInput" type="search" placeholder="EAN o descripción" autocomplete="off">
           <button class="primary-button" type="submit">Buscar</button>
         </form>
         <div class="filter-row">
@@ -124,7 +124,10 @@
         </div>
         <div class="section-heading">
           <div><p class="eyebrow">ADMINISTRACIÓN</p><h2>Productos</h2></div>
-          <button id="newProductButton" class="primary-button compact" type="button">Agregar</button>
+          <div class="heading-actions">
+            <button id="importProductsButton" class="secondary-button compact" type="button">Importar XLSX</button>
+            <button id="newProductButton" class="primary-button compact" type="button">Agregar</button>
+          </div>
         </div>
         <label class="wide-search"><span>Buscar producto</span><input id="adminProductSearch" type="search" placeholder="EAN o descripción"></label>
         <div id="adminProductList" class="record-list empty-state">No hay productos registrados.</div>
@@ -224,16 +227,35 @@
     <form id="productForm" method="dialog" class="modal-card">
       <div class="modal-heading"><div><p class="eyebrow">PRODUCTO</p><h2 id="productDialogTitle">Nuevo producto</h2></div><button type="button" class="icon-button" data-close-dialog>×</button></div>
       <input id="productOriginalEan" type="hidden">
-      <label><span>EAN</span><input id="productEan" inputmode="numeric" maxlength="14" required></label>
+      <label><span>EAN</span><div class="input-action"><input id="productEan" inputmode="numeric" maxlength="14" required><button id="scanProductEan" class="secondary-button compact" type="button">Cámara</button></div></label>
       <label><span>Descripción</span><input id="productDescription" maxlength="160" required></label>
       <div class="form-grid">
         <label><span>Tipo</span><select id="productType"><option value="celular">Celular</option><option value="tablet">Tablet</option><option value="consola">Consola</option><option value="otro">Otro</option></select></label>
-        <label><span>Marca</span><input id="productBrand" maxlength="80"></label>
-        <label><span>Categoría</span><input id="productCategory" maxlength="80"></label>
-        <label class="check-control"><input id="productActive" type="checkbox" checked> Producto activo</label>
       </div>
+      <p class="helper">Los productos nuevos se guardan activos. Los celulares requerirán IMEI al registrar cada unidad.</p>
       <div class="modal-actions"><button type="button" class="secondary-button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">Guardar</button></div>
     </form>
+  </dialog>
+
+  <dialog id="importProductsDialog" class="modal">
+    <form id="importProductsForm" method="dialog" class="modal-card large-modal">
+      <div class="modal-heading"><div><p class="eyebrow">PRODUCTOS</p><h2>Importar archivo XLSX</h2></div><button type="button" class="icon-button" data-close-dialog>×</button></div>
+      <p class="muted">La primera hoja debe contener las columnas <strong>EAN</strong>, <strong>DESCRIPCION</strong> y <strong>TIPO</strong>. Los EAN numéricos se convertirán a texto y todos los productos quedarán activos.</p>
+      <label class="file-drop"><span>Seleccionar archivo</span><input id="productImportFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required></label>
+      <div id="importSummary" class="import-summary" hidden></div>
+      <div id="importErrors" class="import-errors" hidden></div>
+      <div id="importPreview" class="table-wrap" hidden></div>
+      <div class="modal-actions"><button type="button" class="secondary-button" data-close-dialog>Cancelar</button><button id="confirmProductImport" class="primary-button" type="submit" disabled>Importar productos</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="barcodeScannerDialog" class="modal small-modal">
+    <article class="modal-card scanner-card">
+      <div class="modal-heading"><div><p class="eyebrow">CÁMARA</p><h2>Escanear EAN</h2></div><button id="closeBarcodeScanner" type="button" class="icon-button" aria-label="Cerrar">×</button></div>
+      <div class="scanner-frame"><video id="barcodeVideo" playsinline muted></video><div class="scanner-guide" aria-hidden="true"></div></div>
+      <p id="scannerStatus" class="helper">Permití el acceso a la cámara y apuntá al código de barras.</p>
+      <div class="modal-actions"><button id="cancelBarcodeScanner" type="button" class="secondary-button">Cancelar</button></div>
+    </article>
   </dialog>
 
   <dialog id="userDialog" class="modal small-modal">
@@ -271,7 +293,7 @@
     <article class="movement-item">
       <div class="movement-item-heading"><strong>Producto <span data-line-number></span></strong><button type="button" class="danger-link" data-remove-item>Quitar</button></div>
       <div class="form-grid">
-        <label><span>EAN</span><div class="input-action"><input data-item="ean" inputmode="numeric" maxlength="14" required><button type="button" class="secondary-button compact" data-lookup-ean>Buscar</button></div></label>
+        <label><span>EAN</span><div class="input-action"><input data-item="ean" inputmode="numeric" maxlength="14" required><button type="button" class="secondary-button compact" data-scan-ean>Cámara</button><button type="button" class="secondary-button compact" data-lookup-ean>Buscar</button></div></label>
         <label><span>Descripción</span><input data-item="descripcion" maxlength="160" placeholder="Se completa al buscar"></label>
         <label><span>Tipo</span><select data-item="tipo"><option value="celular">Celular</option><option value="tablet">Tablet</option><option value="consola">Consola</option><option value="otro" selected>Otro</option></select></label>
         <label><span>Cantidad</span><input data-item="cantidad" type="number" min="1" max="500" value="1" required></label>
@@ -284,6 +306,8 @@
     </article>
   </template>
 
+  <script defer src="/vendor/exceljs.min.js"></script>
+  <script defer src="/vendor/zxing-browser.min.js"></script>
   <script type="module" src="/js/app.js"></script>
 </body>
 </html>

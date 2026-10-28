@@ -130,8 +130,6 @@ function emptyProduct(item) {
     descripcion: item.descripcion,
     descripcionBusqueda: item.descripcion.toLowerCase(),
     tipo: item.tipo,
-    marca: "",
-    categoria: "",
     activo: true,
     stockSensibleReal: 0,
     stockSensibleDisponible: 0,

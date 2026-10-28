@@ -4,11 +4,35 @@ Aplicación mobile first para registrar y consultar productos del Sensible de El
 
 ## Vistas
 
-- **Administrador:** CRUD de usuarios, productos, vendedores y Seguridad; acceso a movimientos y anulaciones.
+- **Administrador:** CRUD de usuarios y productos, importación XLSX, vendedores y Seguridad; acceso a movimientos y anulaciones.
 - **Jefe:** dashboard, stock, búsqueda, ingresos, salidas, exhibición, transferencias, service y cambios de estado.
 - **Vendedor:** dashboard y búsqueda de productos aptos. No puede crear ni modificar datos.
 
 La aplicación no utiliza fotografías de productos.
+
+## Catálogo de productos
+
+Cada producto utiliza únicamente:
+
+- EAN.
+- Descripción.
+- Tipo: `celular`, `tablet`, `consola` u `otro`.
+
+Los productos nuevos se crean activos. El stock no se carga desde el catálogo: se calcula exclusivamente mediante movimientos.
+
+### Importación XLSX
+
+El Administrador puede importar hasta 2000 productos desde la primera hoja de un archivo `.xlsx`. La fila 1 debe contener estos encabezados:
+
+```text
+EAN | DESCRIPCION | TIPO
+```
+
+Los EAN numéricos se convierten a texto antes de enviarse al servidor. Los EAN existentes actualizan descripción y tipo sin modificar sus cantidades; los nuevos se crean con stock cero. Antes de confirmar se muestran la vista previa y los errores del archivo.
+
+### Cámara
+
+El alta manual de productos y los movimientos permiten escanear EAN con la cámara. El lector funciona únicamente sobre HTTPS o localhost, solicita permiso al usuario y no almacena imágenes.
 
 ## Identificación
 
