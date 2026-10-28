@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0e2948">
+  <meta name="description" content="Control de productos del Sensible de Electro">
+  <title>Control Sensible</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <main id="loginView" class="login-view">
+    <section class="login-card" aria-labelledby="loginTitle">
+      <div class="brand-mark" aria-hidden="true">CS</div>
+      <p class="eyebrow">SENSIBLE DE ELECTRO</p>
+      <h1 id="loginTitle">Control Sensible</h1>
+      <p class="muted">Ingresá para consultar el stock o registrar movimientos.</p>
+
+      <form id="loginForm" class="stack gap-lg">
+        <label>
+          <span>Usuario</span>
+          <input id="loginUser" name="usuario" autocomplete="username" required placeholder="Ej.: Administrador">
+        </label>
+        <label>
+          <span>Contraseña</span>
+          <div class="password-field">
+            <input id="loginPassword" name="password" type="password" autocomplete="current-password" required placeholder="••••••••">
+            <button type="button" class="text-button" data-toggle-password="loginPassword">Ver</button>
+          </div>
+        </label>
+        <button class="primary-button full" type="submit">Ingresar</button>
+      </form>
+      <p id="loginError" class="form-error" hidden></p>
+    </section>
+  </main>
+
+  <div id="appShell" class="app-shell" hidden>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">CONTROL SENSIBLE</p>
+        <h1 id="viewTitle">Inicio</h1>
+      </div>
+      <button id="profileButton" class="profile-button" type="button" aria-label="Abrir opciones de usuario">
+        <span id="profileInitials" class="avatar">U</span>
+        <span class="profile-copy">
+          <strong id="profileName">Usuario</strong>
+          <small id="profileType">Vista</small>
+        </span>
+      </button>
+    </header>
+
+    <aside id="profileMenu" class="profile-menu" hidden>
+      <button id="changePasswordButton" type="button">Cambiar contraseña</button>
+      <button id="logoutButton" type="button" class="danger-text">Cerrar sesión</button>
+    </aside>
+
+    <main class="app-main">
+      <section id="dashboardSection" class="view-section active" data-title="Inicio">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow" id="dashboardEyebrow">RESUMEN</p>
+            <h2 id="dashboardGreeting">Panel general</h2>
+          </div>
+          <button id="refreshDashboard" class="secondary-button compact" type="button">Actualizar</button>
+        </div>
+
+        <div id="kpiGrid" class="kpi-grid" aria-label="Indicadores de stock">
+          <article class="kpi-card blue"><span>Stock disponible</span><strong id="kpiAvailable">0</strong><small>Aptos dentro del sensible</small></article>
+          <article class="kpi-card navy"><span>Stock real</span><strong id="kpiReal">0</strong><small>Total dentro del sensible</small></article>
+          <article class="kpi-card green"><span>En exhibición</span><strong id="kpiDisplay">0</strong><small>Salón o vitrinas</small></article>
+          <article class="kpi-card red"><span>Total controlado</span><strong id="kpiTotal">0</strong><small>Sensible + exhibición</small></article>
+        </div>
+
+        <div id="quickActions" class="quick-actions operator-only">
+          <button type="button" class="action-card primary" data-new-movement="ingreso"><span>Nuevo ingreso</span><small>Individual o por lote</small></button>
+          <button type="button" class="action-card primary" data-new-movement="venta_sensible"><span>Nueva salida</span><small>Venta desde sensible</small></button>
+          <button type="button" class="action-card" data-new-movement="cambio_estado"><span>Cambio de estado</span><small>OK, service, roto o faltantes</small></button>
+          <button type="button" class="action-card" data-new-movement="salida_exhibicion"><span>Exhibición</span><small>Traslado hacia salón</small></button>
+        </div>
+
+        <article id="recentPanel" class="panel">
+          <div class="panel-heading">
+            <h3>Movimientos recientes</h3>
+            <button type="button" class="link-button" data-go="movementsSection">Ver todos</button>
+          </div>
+          <div id="recentMovements" class="record-list empty-state">Todavía no hay movimientos registrados.</div>
+        </article>
+      </section>
+
+      <section id="searchSection" class="view-section" data-title="Buscar stock">
+        <div class="section-heading">
+          <div><p class="eyebrow">CONSULTA EN LÍNEA</p><h2>Productos aptos</h2></div>
+        </div>
+        <form id="searchForm" class="search-bar">
+          <input id="searchInput" type="search" placeholder="EAN, descripción o marca" autocomplete="off">
+          <button class="primary-button" type="submit">Buscar</button>
+        </form>
+        <div class="filter-row">
+          <label class="check-control"><input id="onlyAvailable" type="checkbox" checked> Solo disponibles</label>
+        </div>
+        <div id="searchResults" class="product-grid empty-state">Ingresá un EAN o una descripción.</div>
+      </section>
+
+      <section id="movementsSection" class="view-section" data-title="Movimientos">
+        <div class="section-heading">
+          <div><p class="eyebrow">TRAZABILIDAD</p><h2>Movimientos</h2></div>
+          <button id="newMovementButton" class="primary-button compact operator-only" type="button">Nuevo</button>
+        </div>
+        <div class="filter-grid">
+          <label><span>Buscar</span><input id="movementSearch" type="search" placeholder="Ticket, EAN, producto o usuario"></label>
+          <label><span>Tipo</span><select id="movementTypeFilter"><option value="">Todos</option></select></label>
+        </div>
+        <div id="movementList" class="record-list empty-state">No hay movimientos para mostrar.</div>
+      </section>
+
+      <section id="productsSection" class="view-section admin-only" data-title="Productos">
+        <div class="management-links">
+          <button class="active" type="button" data-go="productsSection">Productos</button>
+          <button type="button" data-go="usersSection">Usuarios</button>
+          <button type="button" data-go="catalogsSection">Personal</button>
+          <button type="button" data-go="auditSection">Auditoría</button>
+        </div>
+        <div class="section-heading">
+          <div><p class="eyebrow">ADMINISTRACIÓN</p><h2>Productos</h2></div>
+          <button id="newProductButton" class="primary-button compact" type="button">Agregar</button>
+        </div>
+        <label class="wide-search"><span>Buscar producto</span><input id="adminProductSearch" type="search" placeholder="EAN o descripción"></label>
+        <div id="adminProductList" class="record-list empty-state">No hay productos registrados.</div>
+      </section>
+
+      <section id="usersSection" class="view-section admin-only" data-title="Usuarios">
+        <div class="management-links">
+          <button type="button" data-go="productsSection">Productos</button>
+          <button class="active" type="button" data-go="usersSection">Usuarios</button>
+          <button type="button" data-go="catalogsSection">Personal</button>
+          <button type="button" data-go="auditSection">Auditoría</button>
+        </div>
+        <div class="section-heading">
+          <div><p class="eyebrow">ADMINISTRACIÓN</p><h2>Usuarios</h2></div>
+          <button id="newUserButton" class="primary-button compact" type="button">Agregar</button>
+        </div>
+        <div id="userList" class="record-list empty-state">No hay usuarios para mostrar.</div>
+      </section>
+
+      <section id="catalogsSection" class="view-section admin-only" data-title="Personal asociado">
+        <div class="management-links">
+          <button type="button" data-go="productsSection">Productos</button>
+          <button type="button" data-go="usersSection">Usuarios</button>
+          <button class="active" type="button" data-go="catalogsSection">Personal</button>
+          <button type="button" data-go="auditSection">Auditoría</button>
+        </div>
+        <div class="section-heading">
+          <div><p class="eyebrow">LISTADOS</p><h2>Vendedores y Seguridad</h2></div>
+        </div>
+        <div class="segmented-control" role="tablist">
+          <button class="active" type="button" data-catalog="vendedores">Vendedores</button>
+          <button type="button" data-catalog="seguridad">Seguridad</button>
+        </div>
+        <form id="catalogForm" class="inline-form">
+          <input id="catalogName" placeholder="Nombre y apellido" required>
+          <button class="primary-button" type="submit">Agregar</button>
+        </form>
+        <div id="catalogList" class="record-list empty-state">No hay registros.</div>
+      </section>
+
+      <section id="auditSection" class="view-section admin-only" data-title="Auditoría">
+        <div class="management-links">
+          <button type="button" data-go="productsSection">Productos</button>
+          <button type="button" data-go="usersSection">Usuarios</button>
+          <button type="button" data-go="catalogsSection">Personal</button>
+          <button class="active" type="button" data-go="auditSection">Auditoría</button>
+        </div>
+        <div class="section-heading">
+          <div><p class="eyebrow">TRAZABILIDAD DEL SISTEMA</p><h2>Auditoría</h2></div>
+          <button id="refreshAudit" class="secondary-button compact" type="button">Actualizar</button>
+        </div>
+        <div id="auditList" class="record-list empty-state">No hay acciones para mostrar.</div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Navegación principal">
+      <button class="active" type="button" data-target="dashboardSection"><span class="nav-dot"></span>Inicio</button>
+      <button type="button" data-target="searchSection"><span class="nav-dot"></span>Buscar</button>
+      <button type="button" data-target="movementsSection"><span class="nav-dot"></span>Movimientos</button>
+      <button class="admin-only" type="button" data-target="productsSection"><span class="nav-dot"></span>Gestión</button>
+    </nav>
+  </div>
+
+  <dialog id="changePasswordDialog" class="modal small-modal">
+    <form id="changePasswordForm" method="dialog" class="modal-card">
+      <div class="modal-heading"><div><p class="eyebrow">SEGURIDAD</p><h2>Cambiar contraseña</h2></div></div>
+      <p class="muted">Debe tener al menos 8 caracteres, mayúscula, minúscula y número.</p>
+      <label><span>Nueva contraseña</span><input id="newOwnPassword" type="password" minlength="8" required autocomplete="new-password"></label>
+      <label><span>Repetir contraseña</span><input id="repeatOwnPassword" type="password" minlength="8" required autocomplete="new-password"></label>
+      <div class="modal-actions"><button type="button" class="secondary-button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">Guardar</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="movementDialog" class="modal">
+    <form id="movementForm" method="dialog" class="modal-card large-modal">
+      <div class="modal-heading">
+        <div><p class="eyebrow">MOVIMIENTO</p><h2 id="movementDialogTitle">Nuevo movimiento</h2></div>
+        <button type="button" class="icon-button" data-close-dialog aria-label="Cerrar">×</button>
+      </div>
+      <div class="form-grid">
+        <label><span>Tipo de movimiento</span><select id="movementType" required></select></label>
+        <label id="ticketField"><span>Número de ticket</span><input id="movementTicket" placeholder="Ej.: 0054-00012345"></label>
+        <label id="destinationField"><span>Empresa o destino</span><input id="movementDestination" placeholder="Destino del producto"></label>
+        <label><span>Vendedor relacionado</span><select id="movementSeller"><option value="">Sin asignar</option></select></label>
+        <label><span>Seguridad relacionada</span><select id="movementSecurity"><option value="">Sin asignar</option></select></label>
+      </div>
+      <label><span>Observaciones</span><textarea id="movementNotes" rows="2" placeholder="Información adicional"></textarea></label>
+
+      <div class="subheading-row"><h3>Productos del movimiento</h3><button id="addMovementItem" class="secondary-button compact" type="button">Agregar producto</button></div>
+      <div id="movementItems" class="movement-items"></div>
+      <p class="helper">Los celulares requieren un IMEI de 15 dígitos por unidad. Tablets y consolas se identifican solamente por EAN.</p>
+      <div class="modal-actions sticky-actions"><button type="button" class="secondary-button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">Registrar movimiento</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="productDialog" class="modal small-modal">
+    <form id="productForm" method="dialog" class="modal-card">
+      <div class="modal-heading"><div><p class="eyebrow">PRODUCTO</p><h2 id="productDialogTitle">Nuevo producto</h2></div><button type="button" class="icon-button" data-close-dialog>×</button></div>
+      <input id="productOriginalEan" type="hidden">
+      <label><span>EAN</span><input id="productEan" inputmode="numeric" maxlength="14" required></label>
+      <label><span>Descripción</span><input id="productDescription" maxlength="160" required></label>
+      <div class="form-grid">
+        <label><span>Tipo</span><select id="productType"><option value="celular">Celular</option><option value="tablet">Tablet</option><option value="consola">Consola</option><option value="otro">Otro</option></select></label>
+        <label><span>Marca</span><input id="productBrand" maxlength="80"></label>
+        <label><span>Categoría</span><input id="productCategory" maxlength="80"></label>
+        <label class="check-control"><input id="productActive" type="checkbox" checked> Producto activo</label>
+      </div>
+      <div class="modal-actions"><button type="button" class="secondary-button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">Guardar</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="userDialog" class="modal small-modal">
+    <form id="userForm" method="dialog" class="modal-card">
+      <div class="modal-heading"><div><p class="eyebrow">USUARIO</p><h2 id="userDialogTitle">Nuevo usuario</h2></div><button type="button" class="icon-button" data-close-dialog>×</button></div>
+      <input id="userUid" type="hidden">
+      <label><span>Usuario</span><input id="userUsername" maxlength="60" required></label>
+      <label><span>Nombre y apellido</span><input id="userName" maxlength="120" required></label>
+      <label><span>Vista asignada</span><select id="userProfile"><option value="administrador">Administrador</option><option value="jefe">Jefe</option><option value="vendedor">Vendedor</option></select></label>
+      <label id="userPasswordField"><span>Contraseña inicial</span><input id="userPassword" type="password" minlength="8" autocomplete="new-password"></label>
+      <label id="userActiveField" class="check-control"><input id="userActive" type="checkbox" checked> Usuario activo</label>
+      <div class="modal-actions"><button type="button" class="secondary-button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">Guardar</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="resetPasswordDialog" class="modal small-modal">
+    <form id="resetPasswordForm" method="dialog" class="modal-card">
+      <div class="modal-heading"><div><p class="eyebrow">USUARIO</p><h2>Restablecer contraseña</h2></div><button type="button" class="icon-button" data-close-dialog>×</button></div>
+      <input id="resetPasswordUid" type="hidden">
+      <p class="muted">El usuario deberá cambiar esta contraseña en su próximo ingreso.</p>
+      <label><span>Nueva contraseña inicial</span><input id="resetPasswordValue" type="password" minlength="8" required autocomplete="new-password"></label>
+      <div class="modal-actions"><button type="button" class="secondary-button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">Restablecer</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="detailDialog" class="modal small-modal">
+    <article class="modal-card">
+      <div class="modal-heading"><div><p class="eyebrow">DETALLE</p><h2 id="detailTitle">Registro</h2></div><button type="button" class="icon-button" data-close-dialog>×</button></div>
+      <div id="detailContent"></div>
+      <div id="detailActions" class="modal-actions"></div>
+    </article>
+  </dialog>
+
+  <template id="movementItemTemplate">
+    <article class="movement-item">
+      <div class="movement-item-heading"><strong>Producto <span data-line-number></span></strong><button type="button" class="danger-link" data-remove-item>Quitar</button></div>
+      <div class="form-grid">
+        <label><span>EAN</span><div class="input-action"><input data-item="ean" inputmode="numeric" maxlength="14" required><button type="button" class="secondary-button compact" data-lookup-ean>Buscar</button></div></label>
+        <label><span>Descripción</span><input data-item="descripcion" maxlength="160" placeholder="Se completa al buscar"></label>
+        <label><span>Tipo</span><select data-item="tipo"><option value="celular">Celular</option><option value="tablet">Tablet</option><option value="consola">Consola</option><option value="otro" selected>Otro</option></select></label>
+        <label><span>Cantidad</span><input data-item="cantidad" type="number" min="1" max="500" value="1" required></label>
+        <label data-current-state-field><span>Estado actual</span><select data-item="estadoAnterior"><option value="ok">OK</option><option value="para_service">Para service</option><option value="roto">Roto</option><option value="con_faltantes">Con faltantes</option></select></label>
+        <label data-new-state-field><span>Estado de ingreso / nuevo</span><select data-item="estado"><option value="ok">OK</option><option value="para_service">Para service</option><option value="roto">Roto</option><option value="con_faltantes">Con faltantes</option></select></label>
+        <label data-change-state-field><span>Nuevo estado</span><select data-item="estadoNuevo"><option value="para_service">Para service</option><option value="ok">OK</option><option value="roto">Roto</option><option value="con_faltantes">Con faltantes</option></select></label>
+        <label class="full-field" data-imei-field><span>IMEI (uno por línea)</span><textarea data-item="imeis" rows="2" inputmode="numeric" placeholder="15 dígitos por unidad"></textarea></label>
+        <label data-serial-field><span>Número de serie, cuando corresponda</span><input data-item="serie" maxlength="80"></label>
+      </div>
+    </article>
+  </template>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
