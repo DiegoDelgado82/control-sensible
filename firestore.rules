@@ -1,0 +1,65 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function estaAutenticado() {
+      return request.auth != null;
+    }
+
+    function usuarioActual() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    function usuarioActivo() {
+      return estaAutenticado() && usuarioActual().activo == true;
+    }
+
+    function esAdministrador() {
+      return usuarioActivo() && usuarioActual().perfil == "administrador";
+    }
+
+    match /usuarios/{uid} {
+      allow read: if estaAutenticado() && (request.auth.uid == uid || esAdministrador());
+      allow write: if false;
+    }
+
+    match /productos/{id} {
+      allow read: if usuarioActivo();
+      allow write: if false;
+    }
+
+    match /movimientos/{id} {
+      allow read: if usuarioActivo();
+      allow write: if false;
+    }
+
+    match /lotes/{id} {
+      allow read: if usuarioActivo();
+      allow write: if false;
+    }
+
+    match /vendedores/{id} {
+      allow read: if usuarioActivo();
+      allow write: if false;
+    }
+
+    match /seguridad/{id} {
+      allow read: if usuarioActivo();
+      allow write: if false;
+    }
+
+    match /configuracion/{id} {
+      allow read: if usuarioActivo();
+      allow write: if false;
+    }
+
+    match /auditoria/{id} {
+      allow read: if esAdministrador();
+      allow write: if false;
+    }
+
+    match /{documento=**} {
+      allow read, write: if false;
+    }
+  }
+}

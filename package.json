@@ -1,0 +1,17 @@
+{
+  "name": "control-sensible",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Control de stock y movimientos del sensible de Electro",
+  "scripts": {
+    "check": "node --check public/js/app.js && node --check netlify/functions/perfil.js && node --check netlify/functions/cambiar-clave.js && node --check netlify/functions/dashboard.js && node --check netlify/functions/productos.js && node --check netlify/functions/usuarios.js && node --check netlify/functions/catalogos.js && node --check netlify/functions/movimientos.js && node --check netlify/functions/auditoria.js",
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
