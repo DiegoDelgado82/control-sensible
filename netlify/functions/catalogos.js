@@ -25,12 +25,19 @@ export async function handler(event) {
       return response(200, { ok: true, items }, origin);
     }
 
-    if (profile.perfil !== "administrador") throw Object.assign(new Error("Solo el Administrador puede modificar catálogos."), { statusCode: 403 });
     const body = parseBody(event);
 
     if (event.httpMethod === "POST") {
+      if (!["administrador", "jefe"].includes(profile.perfil)) {
+        throw Object.assign(new Error("Solo un Jefe o Administrador puede agregar personas."), { statusCode: 403 });
+      }
       const nombre = cleanText(body.nombre, 120);
       if (!nombre) throw Object.assign(new Error("El nombre es obligatorio."), { statusCode: 400 });
+      const existing = await db.collection(catalog).get();
+      const normalizedName = nombre.toLocaleLowerCase("es");
+      if (existing.docs.some(doc => cleanText(doc.data().nombre, 120).toLocaleLowerCase("es") === normalizedName)) {
+        throw Object.assign(new Error("La persona ya se encuentra registrada en el listado."), { statusCode: 409 });
+      }
       const ref = await db.collection(catalog).add({
         nombre,
         activo: true,
@@ -41,6 +48,9 @@ export async function handler(event) {
     }
 
     if (event.httpMethod === "PATCH") {
+      if (profile.perfil !== "administrador") {
+        throw Object.assign(new Error("Solo el Administrador puede modificar catálogos."), { statusCode: 403 });
+      }
       const id = cleanText(body.id, 128);
       const nombre = cleanText(body.nombre, 120);
       if (!id || !nombre) throw Object.assign(new Error("Faltan datos del registro."), { statusCode: 400 });

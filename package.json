@@ -1,6 +1,6 @@
 {
   "name": "control-sensible",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "description": "Control de stock y movimientos del sensible de Electro",

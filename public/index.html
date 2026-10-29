@@ -9,6 +9,22 @@
   <link rel="stylesheet" href="/css/estilos.css">
 </head>
 <body>
+  <svg class="svg-sprite" aria-hidden="true">
+    <symbol id="icon-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10M9.5 20v-6h5v6"/></symbol>
+    <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></symbol>
+    <symbol id="icon-movements" viewBox="0 0 24 24"><path d="M4 7h15m0 0-4-4m4 4-4 4M20 17H5m0 0 4-4m-4 4 4 4"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 13.5v-3l-2-.7a7 7 0 0 0-.7-1.7l.9-1.9-2.1-2.1-1.9.9a7 7 0 0 0-1.7-.7L10.5 2h-3l-.7 2a7 7 0 0 0-1.7.7l-1.9-.9-2.1 2.1.9 1.9a7 7 0 0 0-.7 1.7L0 10.5v3l2 .7a7 7 0 0 0 .7 1.7l-.9 1.9 2.1 2.1 1.9-.9a7 7 0 0 0 1.7.7l.7 2h3l.7-2a7 7 0 0 0 1.7-.7l1.9.9 2.1-2.1-.9-1.9a7 7 0 0 0 .7-1.7Z" transform="translate(2.5 0) scale(.8)"/></symbol>
+    <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5"/><path d="M19 12a7 7 0 1 0-2 5"/></symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="icon-upload" viewBox="0 0 24 24"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M5 14v6h14v-6"/></symbol>
+    <symbol id="icon-camera" viewBox="0 0 24 24"><path d="M4 8h4l1.5-2h5L16 8h4v11H4Z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+    <symbol id="icon-in" viewBox="0 0 24 24"><path d="M12 3v14m0 0-5-5m5 5 5-5"/><path d="M5 21h14"/></symbol>
+    <symbol id="icon-out" viewBox="0 0 24 24"><path d="M12 21V7m0 0-5 5m5-5 5 5"/><path d="M5 3h14"/></symbol>
+    <symbol id="icon-state" viewBox="0 0 24 24"><path d="M7 7h11l-3-3m3 3-3 3M17 17H6l3 3m-3-3 3-3"/></symbol>
+    <symbol id="icon-display" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></symbol>
+    <symbol id="icon-user-plus" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2.5 21a6.5 6.5 0 0 1 13 0M19 8v6m-3-3h6"/></symbol>
+    <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+  </svg>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <main id="loginView" class="login-view">
@@ -63,7 +79,7 @@
             <p class="eyebrow" id="dashboardEyebrow">RESUMEN</p>
             <h2 id="dashboardGreeting">Panel general</h2>
           </div>
-          <button id="refreshDashboard" class="secondary-button compact" type="button">Actualizar</button>
+          <button id="refreshDashboard" class="secondary-button compact button-with-icon" type="button"><svg class="icon"><use href="#icon-refresh"></use></svg><span>Actualizar</span></button>
         </div>
 
         <div id="kpiGrid" class="kpi-grid" aria-label="Indicadores de stock">
@@ -74,10 +90,10 @@
         </div>
 
         <div id="quickActions" class="quick-actions operator-only">
-          <button type="button" class="action-card primary" data-new-movement="ingreso"><span>Nuevo ingreso</span><small>Individual o por lote</small></button>
-          <button type="button" class="action-card primary" data-new-movement="venta_sensible"><span>Nueva salida</span><small>Venta desde sensible</small></button>
-          <button type="button" class="action-card" data-new-movement="cambio_estado"><span>Cambio de estado</span><small>OK, service, roto o faltantes</small></button>
-          <button type="button" class="action-card" data-new-movement="salida_exhibicion"><span>Exhibición</span><small>Traslado hacia salón</small></button>
+          <button type="button" class="action-card primary" data-new-movement="ingreso"><svg class="action-icon"><use href="#icon-in"></use></svg><span>Nuevo ingreso</span><small>Individual o por lote</small></button>
+          <button type="button" class="action-card primary" data-new-movement="venta_sensible"><svg class="action-icon"><use href="#icon-out"></use></svg><span>Nueva salida</span><small>Venta desde sensible</small></button>
+          <button type="button" class="action-card" data-new-movement="cambio_estado"><svg class="action-icon"><use href="#icon-state"></use></svg><span>Cambio de estado</span><small>OK, service, roto o faltantes</small></button>
+          <button type="button" class="action-card" data-new-movement="salida_exhibicion"><svg class="action-icon"><use href="#icon-display"></use></svg><span>Exhibición</span><small>Traslado hacia salón</small></button>
         </div>
 
         <article id="recentPanel" class="panel">
@@ -95,7 +111,7 @@
         </div>
         <form id="searchForm" class="search-bar">
           <input id="searchInput" type="search" placeholder="EAN o descripción" autocomplete="off">
-          <button class="primary-button" type="submit">Buscar</button>
+          <button class="primary-button button-with-icon" type="submit"><svg class="icon"><use href="#icon-search"></use></svg><span>Buscar</span></button>
         </form>
         <div class="filter-row">
           <label class="check-control"><input id="onlyAvailable" type="checkbox" checked> Solo disponibles</label>
@@ -106,7 +122,7 @@
       <section id="movementsSection" class="view-section" data-title="Movimientos">
         <div class="section-heading">
           <div><p class="eyebrow">TRAZABILIDAD</p><h2>Movimientos</h2></div>
-          <button id="newMovementButton" class="primary-button compact operator-only" type="button">Nuevo</button>
+          <button id="newMovementButton" class="primary-button compact operator-only button-with-icon" type="button"><svg class="icon"><use href="#icon-plus"></use></svg><span>Nuevo</span></button>
         </div>
         <div class="filter-grid">
           <label><span>Buscar</span><input id="movementSearch" type="search" placeholder="Ticket, EAN, producto o usuario"></label>
@@ -125,8 +141,8 @@
         <div class="section-heading">
           <div><p class="eyebrow">ADMINISTRACIÓN</p><h2>Productos</h2></div>
           <div class="heading-actions">
-            <button id="importProductsButton" class="secondary-button compact" type="button">Importar XLSX</button>
-            <button id="newProductButton" class="primary-button compact" type="button">Agregar</button>
+            <button id="importProductsButton" class="secondary-button compact button-with-icon" type="button"><svg class="icon"><use href="#icon-upload"></use></svg><span>Importar</span></button>
+            <button id="newProductButton" class="primary-button compact button-with-icon" type="button"><svg class="icon"><use href="#icon-plus"></use></svg><span>Agregar</span></button>
           </div>
         </div>
         <label class="wide-search"><span>Buscar producto</span><input id="adminProductSearch" type="search" placeholder="EAN o descripción"></label>
@@ -142,7 +158,7 @@
         </div>
         <div class="section-heading">
           <div><p class="eyebrow">ADMINISTRACIÓN</p><h2>Usuarios</h2></div>
-          <button id="newUserButton" class="primary-button compact" type="button">Agregar</button>
+          <button id="newUserButton" class="primary-button compact button-with-icon" type="button"><svg class="icon"><use href="#icon-plus"></use></svg><span>Agregar</span></button>
         </div>
         <div id="userList" class="record-list empty-state">No hay usuarios para mostrar.</div>
       </section>
@@ -163,7 +179,7 @@
         </div>
         <form id="catalogForm" class="inline-form">
           <input id="catalogName" placeholder="Nombre y apellido" required>
-          <button class="primary-button" type="submit">Agregar</button>
+          <button class="primary-button button-with-icon" type="submit"><svg class="icon"><use href="#icon-plus"></use></svg><span>Agregar</span></button>
         </form>
         <div id="catalogList" class="record-list empty-state">No hay registros.</div>
       </section>
@@ -177,17 +193,17 @@
         </div>
         <div class="section-heading">
           <div><p class="eyebrow">TRAZABILIDAD DEL SISTEMA</p><h2>Auditoría</h2></div>
-          <button id="refreshAudit" class="secondary-button compact" type="button">Actualizar</button>
+          <button id="refreshAudit" class="secondary-button compact button-with-icon" type="button"><svg class="icon"><use href="#icon-refresh"></use></svg><span>Actualizar</span></button>
         </div>
         <div id="auditList" class="record-list empty-state">No hay acciones para mostrar.</div>
       </section>
     </main>
 
     <nav class="bottom-nav" aria-label="Navegación principal">
-      <button class="active" type="button" data-target="dashboardSection"><span class="nav-dot"></span>Inicio</button>
-      <button type="button" data-target="searchSection"><span class="nav-dot"></span>Buscar</button>
-      <button type="button" data-target="movementsSection"><span class="nav-dot"></span>Movimientos</button>
-      <button class="admin-only" type="button" data-target="productsSection"><span class="nav-dot"></span>Gestión</button>
+      <button class="active" type="button" data-target="dashboardSection"><svg class="nav-icon"><use href="#icon-home"></use></svg><span>Inicio</span></button>
+      <button type="button" data-target="searchSection"><svg class="nav-icon"><use href="#icon-search"></use></svg><span>Buscar</span></button>
+      <button type="button" data-target="movementsSection"><svg class="nav-icon"><use href="#icon-movements"></use></svg><span>Movimientos</span></button>
+      <button class="admin-only" type="button" data-target="productsSection"><svg class="nav-icon"><use href="#icon-settings"></use></svg><span>Gestión</span></button>
     </nav>
   </div>
 
@@ -208,15 +224,15 @@
         <button type="button" class="icon-button" data-close-dialog aria-label="Cerrar">×</button>
       </div>
       <div class="form-grid">
-        <label><span>Tipo de movimiento</span><select id="movementType" required></select></label>
+        <label><span>Tipo de movimiento <small id="movementTypeLock" class="field-lock" hidden><svg class="mini-icon"><use href="#icon-lock"></use></svg>Fijado por la acción elegida</small></span><select id="movementType" required></select></label>
         <label id="ticketField"><span>Número de ticket</span><input id="movementTicket" placeholder="Ej.: 0054-00012345"></label>
         <label id="destinationField"><span>Empresa o destino</span><input id="movementDestination" placeholder="Destino del producto"></label>
-        <label><span>Vendedor relacionado</span><select id="movementSeller"><option value="">Sin asignar</option></select></label>
-        <label><span>Seguridad relacionada</span><select id="movementSecurity"><option value="">Sin asignar</option></select></label>
+        <label><span>Vendedor relacionado</span><div class="select-action"><select id="movementSeller"><option value="">Sin asignar</option></select><button class="icon-square" type="button" data-quick-catalog="vendedores" aria-label="Agregar vendedor" title="Agregar vendedor"><svg class="icon"><use href="#icon-user-plus"></use></svg></button></div></label>
+        <label><span>Guardia de Seguridad</span><div class="select-action"><select id="movementSecurity"><option value="">Sin asignar</option></select><button class="icon-square" type="button" data-quick-catalog="seguridad" aria-label="Agregar guardia" title="Agregar guardia"><svg class="icon"><use href="#icon-user-plus"></use></svg></button></div></label>
       </div>
       <label><span>Observaciones</span><textarea id="movementNotes" rows="2" placeholder="Información adicional"></textarea></label>
 
-      <div class="subheading-row"><h3>Productos del movimiento</h3><button id="addMovementItem" class="secondary-button compact" type="button">Agregar producto</button></div>
+      <div class="subheading-row"><h3>Productos del movimiento</h3><button id="addMovementItem" class="secondary-button compact button-with-icon" type="button"><svg class="icon"><use href="#icon-plus"></use></svg><span>Producto</span></button></div>
       <div id="movementItems" class="movement-items"></div>
       <p class="helper">Los celulares requieren un IMEI de 15 dígitos por unidad. Tablets y consolas se identifican solamente por EAN.</p>
       <div class="modal-actions sticky-actions"><button type="button" class="secondary-button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">Registrar movimiento</button></div>
@@ -227,13 +243,23 @@
     <form id="productForm" method="dialog" class="modal-card">
       <div class="modal-heading"><div><p class="eyebrow">PRODUCTO</p><h2 id="productDialogTitle">Nuevo producto</h2></div><button type="button" class="icon-button" data-close-dialog>×</button></div>
       <input id="productOriginalEan" type="hidden">
-      <label><span>EAN</span><div class="input-action"><input id="productEan" inputmode="numeric" maxlength="14" required><button id="scanProductEan" class="secondary-button compact" type="button">Cámara</button></div></label>
+      <label class="ean-field"><span>EAN</span><div class="input-action"><input id="productEan" inputmode="numeric" maxlength="14" required placeholder="Escaneá o ingresá el EAN"><button id="scanProductEan" class="icon-square" type="button" aria-label="Escanear con cámara" title="Escanear con cámara"><svg class="icon"><use href="#icon-camera"></use></svg></button><button id="lookupProductEan" class="icon-square" type="button" aria-label="Buscar EAN" title="Buscar EAN"><svg class="icon"><use href="#icon-search"></use></svg></button></div></label>
       <label><span>Descripción</span><input id="productDescription" maxlength="160" required></label>
       <div class="form-grid">
         <label><span>Tipo</span><select id="productType"><option value="celular">Celular</option><option value="tablet">Tablet</option><option value="consola">Consola</option><option value="otro">Otro</option></select></label>
       </div>
       <p class="helper">Los productos nuevos se guardan activos. Los celulares requerirán IMEI al registrar cada unidad.</p>
       <div class="modal-actions"><button type="button" class="secondary-button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">Guardar</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="quickCatalogDialog" class="modal small-modal">
+    <form id="quickCatalogForm" method="dialog" class="modal-card">
+      <div class="modal-heading"><div><p class="eyebrow">MOVIMIENTO</p><h2 id="quickCatalogTitle">Agregar persona</h2></div><button type="button" class="icon-button" data-close-dialog>×</button></div>
+      <input id="quickCatalogType" type="hidden">
+      <label><span>Nombre y apellido</span><input id="quickCatalogName" maxlength="120" required autocomplete="off"></label>
+      <p class="helper">Se agregará como activo y quedará seleccionado en el movimiento actual.</p>
+      <div class="modal-actions"><button type="button" class="secondary-button" data-close-dialog>Cancelar</button><button class="primary-button button-with-icon" type="submit"><svg class="icon"><use href="#icon-plus"></use></svg><span>Agregar</span></button></div>
     </form>
   </dialog>
 
@@ -293,7 +319,7 @@
     <article class="movement-item">
       <div class="movement-item-heading"><strong>Producto <span data-line-number></span></strong><button type="button" class="danger-link" data-remove-item>Quitar</button></div>
       <div class="form-grid">
-        <label><span>EAN</span><div class="input-action"><input data-item="ean" inputmode="numeric" maxlength="14" required><button type="button" class="secondary-button compact" data-scan-ean>Cámara</button><button type="button" class="secondary-button compact" data-lookup-ean>Buscar</button></div></label>
+        <label class="ean-field full-field"><span>EAN</span><div class="input-action"><input data-item="ean" inputmode="numeric" maxlength="14" required placeholder="Escaneá o ingresá el EAN"><button type="button" class="icon-square" data-scan-ean aria-label="Escanear con cámara" title="Escanear con cámara"><svg class="icon"><use href="#icon-camera"></use></svg></button><button type="button" class="icon-square" data-lookup-ean aria-label="Buscar EAN" title="Buscar EAN"><svg class="icon"><use href="#icon-search"></use></svg></button></div></label>
         <label><span>Descripción</span><input data-item="descripcion" maxlength="160" placeholder="Se completa al buscar"></label>
         <label><span>Tipo</span><select data-item="tipo"><option value="celular">Celular</option><option value="tablet">Tablet</option><option value="consola">Consola</option><option value="otro" selected>Otro</option></select></label>
         <label><span>Cantidad</span><input data-item="cantidad" type="number" min="1" max="500" value="1" required></label>

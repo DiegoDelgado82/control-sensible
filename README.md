@@ -34,6 +34,14 @@ Los EAN numéricos se convierten a texto antes de enviarse al servidor. Los EAN 
 
 El alta manual de productos y los movimientos permiten escanear EAN con la cámara. El lector funciona únicamente sobre HTTPS o localhost, solicita permiso al usuario y no almacena imágenes.
 
+## Experiencia móvil
+
+- La aplicación ocupa el alto disponible del dispositivo y evita el desbordamiento horizontal.
+- Las listas extensas se desplazan dentro del área de contenido, manteniendo visibles el encabezado y la navegación.
+- Los accesos del inicio abren un movimiento con el tipo bloqueado para evitar cambios accidentales.
+- El formulario de movimientos permite agregar rápidamente un vendedor o guardia sin abandonar la operación.
+- Los campos EAN tienen mayor tamaño y accesos mediante iconos para cámara y búsqueda.
+
 ## Identificación
 
 - Celulares: EAN + IMEI.

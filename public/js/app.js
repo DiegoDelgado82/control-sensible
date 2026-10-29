@@ -35,6 +35,19 @@ const MOVEMENT_LABELS = {
   anulacion: "Anulación"
 };
 
+const MOVEMENT_ICONS = {
+  ingreso: "icon-in",
+  reingreso: "icon-in",
+  venta_sensible: "icon-out",
+  exhibicion_inicial: "icon-display",
+  salida_exhibicion: "icon-display",
+  venta_exhibicion: "icon-out",
+  transferencia: "icon-movements",
+  salida_service: "icon-out",
+  cambio_estado: "icon-state",
+  anulacion: "icon-state"
+};
+
 const STATE_LABELS = {
   ok: "OK",
   para_service: "Para service",
@@ -88,11 +101,11 @@ function showToast(message, type = "success") {
 function setBusy(button, busy, label = "Procesando...") {
   if (!button) return;
   if (busy) {
-    button.dataset.originalText = button.textContent;
+    button.dataset.originalHtml = button.innerHTML;
     button.textContent = label;
     button.disabled = true;
   } else {
-    button.textContent = button.dataset.originalText || button.textContent;
+    if (button.dataset.originalHtml) button.innerHTML = button.dataset.originalHtml;
     button.disabled = false;
   }
 }
@@ -153,7 +166,7 @@ function showView(targetId) {
   $$(".bottom-nav button[data-target]").forEach(button => button.classList.toggle("active", button.dataset.target === targetId));
   const target = document.getElementById(targetId);
   $("#viewTitle").textContent = target?.dataset.title || "Control Sensible";
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  $(".app-main")?.scrollTo({ top: 0, behavior: "smooth" });
 
   if (targetId === "productsSection") loadAdminProducts();
   if (targetId === "usersSection") loadUsers();
@@ -197,7 +210,8 @@ function movementCard(movement, compact = false) {
   const typeLabel = MOVEMENT_LABELS[movement.tipo] || movement.tipo;
   const itemSummary = movement.resumen || `${movement.cantidadUnidades || 0} unidad(es)`;
   return `
-    <article class="record-card clickable" data-movement-id="${escapeHtml(movement.id)}">
+    <article class="record-card clickable movement-record" data-movement-id="${escapeHtml(movement.id)}">
+      <span class="record-icon" aria-hidden="true"><svg class="icon"><use href="#${escapeHtml(MOVEMENT_ICONS[movement.tipo] || "icon-movements")}"></use></svg></span>
       <div class="record-main">
         <strong>${escapeHtml(typeLabel)}</strong>
         <small>${escapeHtml(itemSummary)}${movement.ticket ? ` · Ticket ${escapeHtml(movement.ticket)}` : ""}</small>
@@ -468,6 +482,23 @@ async function scanProductEan() {
       showToast(error.message, "error");
     }
   });
+}
+
+async function lookupProductFormEan() {
+  const ean = $("#productEan").value.replace(/\D/g, "");
+  if (!ean) return showToast("Ingresá un EAN para buscar.", "error");
+  try {
+    const data = await api(`productos?ean=${encodeURIComponent(ean)}`);
+    if (!data.producto) {
+      $("#productDescription").focus();
+      showToast("El EAN es nuevo. Completá la descripción y el tipo.");
+      return;
+    }
+    openProductForm(data.producto);
+    showToast("Producto encontrado.");
+  } catch (error) {
+    showToast(error.message, "error");
+  }
 }
 
 function normalizeHeader(value) {
@@ -785,6 +816,35 @@ async function addCatalogItem(event) {
   } catch (error) { showToast(error.message, "error"); }
 }
 
+function openQuickCatalog(type) {
+  $("#quickCatalogForm").reset();
+  $("#quickCatalogType").value = type;
+  $("#quickCatalogTitle").textContent = type === "vendedores" ? "Agregar vendedor" : "Agregar guardia";
+  openDialog($("#quickCatalogDialog"));
+  setTimeout(() => $("#quickCatalogName").focus(), 0);
+}
+
+async function saveQuickCatalog(event) {
+  event.preventDefault();
+  const button = event.submitter;
+  const type = $("#quickCatalogType").value;
+  const name = $("#quickCatalogName").value.trim();
+  if (!name) return;
+  try {
+    setBusy(button, true, "Agregando...");
+    const result = await api(`catalogos?tipo=${type}`, { method: "POST", body: JSON.stringify({ tipo: type, nombre: name }) });
+    await loadCatalog(type);
+    const select = type === "vendedores" ? $("#movementSeller") : $("#movementSecurity");
+    select.value = result.id;
+    closeDialog($("#quickCatalogDialog"));
+    showToast(type === "vendedores" ? "Vendedor agregado y seleccionado." : "Guardia agregado y seleccionado.");
+  } catch (error) {
+    showToast(error.message, "error");
+  } finally {
+    setBusy(button, false);
+  }
+}
+
 async function toggleCatalogItem(id) {
   const item = state.catalogs[state.currentCatalog].find(entry => entry.id === id);
   if (!item) return;
@@ -872,9 +932,11 @@ async function lookupMovementEan(item) {
   } catch (error) { showToast(error.message, "error"); }
 }
 
-function openMovementForm(defaultType = "ingreso") {
+function openMovementForm(defaultType = "ingreso", lockType = false) {
   $("#movementForm").reset();
   $("#movementType").value = defaultType;
+  $("#movementType").disabled = lockType;
+  $("#movementTypeLock").hidden = !lockType;
   $("#movementItems").innerHTML = "";
   addMovementItem();
   updateMovementForm();
@@ -993,14 +1055,15 @@ function bindEvents() {
   $("#recentMovements").addEventListener("click", event => { const card = event.target.closest("[data-movement-id]"); if (card) showMovementDetail(card.dataset.movementId); });
   $("#movementList").addEventListener("click", event => { const card = event.target.closest("[data-movement-id]"); if (card) showMovementDetail(card.dataset.movementId); });
 
-  $$("[data-new-movement]").forEach(button => button.addEventListener("click", () => openMovementForm(button.dataset.newMovement)));
-  $("#newMovementButton").addEventListener("click", () => openMovementForm("ingreso"));
+  $$("[data-new-movement]").forEach(button => button.addEventListener("click", () => openMovementForm(button.dataset.newMovement, true)));
+  $("#newMovementButton").addEventListener("click", () => openMovementForm("ingreso", false));
   $("#movementType").addEventListener("change", updateMovementForm);
   $("#addMovementItem").addEventListener("click", addMovementItem);
   $("#movementForm").addEventListener("submit", saveMovement);
 
   $("#newProductButton").addEventListener("click", () => openProductForm());
   $("#scanProductEan").addEventListener("click", scanProductEan);
+  $("#lookupProductEan").addEventListener("click", lookupProductFormEan);
   $("#productForm").addEventListener("submit", saveProduct);
   $("#importProductsButton").addEventListener("click", () => { resetImportDialog(); openDialog($("#importProductsDialog")); });
   $("#productImportFile").addEventListener("change", handleProductImportFile);
@@ -1008,6 +1071,8 @@ function bindEvents() {
   $("#closeBarcodeScanner").addEventListener("click", () => closeDialog($("#barcodeScannerDialog")));
   $("#cancelBarcodeScanner").addEventListener("click", () => closeDialog($("#barcodeScannerDialog")));
   $("#barcodeScannerDialog").addEventListener("close", stopBarcodeScanner);
+  $$("[data-quick-catalog]").forEach(button => button.addEventListener("click", () => openQuickCatalog(button.dataset.quickCatalog)));
+  $("#quickCatalogForm").addEventListener("submit", saveQuickCatalog);
   $("#adminProductSearch").addEventListener("input", renderAdminProducts);
   $("#adminProductList").addEventListener("click", event => {
     const button = event.target.closest("[data-edit-product]");
